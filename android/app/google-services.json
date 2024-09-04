@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "352328975783",
+    "project_id": "afterscene-b4652",
+    "storage_bucket": "afterscene-b4652.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:352328975783:android:503c3b7c1c8adb82d06282",
+        "android_client_info": {
+          "package_name": "com.example.afterscene"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9Dt_-Ys_F4EnF-pnRXaixSMBMIapXQac"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
