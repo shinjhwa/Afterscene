@@ -18,7 +18,9 @@ dependencies:
   table_calendar:
   firebase_core:
   firebase_auth:
+  firebase_storage:
   cloud_firestore:
+  image_picker:
 
   cupertino_icons: ^1.0.6
 
