@@ -35,13 +35,22 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Login'),
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            SizedBox(height: 30,),
+            const Text(
+              'Afterscene',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 5),
             TextField(
               controller: emailController,
               decoration: InputDecoration(labelText: 'Email'),
@@ -53,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             if (isLoading)
               CircularProgressIndicator(),
-            SizedBox(height: 20),
+            SizedBox(height: 10),
             ElevatedButton(
               onPressed: isLoading ? null : _login,  // 로딩 중에는 버튼 비활성화
               child: Text('Login'),
@@ -63,6 +72,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 Navigator.pushNamed(context, '/register');
               },
               child: Text('Don\'t have an account? Sign Up'),
+            ),
+            Image.asset(
+              'assets/image.jpg',
+              height: 100,
+              fit: BoxFit.contain,
             ),
           ],
         ),
