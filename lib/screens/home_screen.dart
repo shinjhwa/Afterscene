@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'movie_room_screen.dart';
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
-import 'my_page_screen.dart';
+import 'my_page_screen.dart'; // 마이페이지로 이동하는 버튼을 위해 MyPageScreen 추가
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -22,9 +19,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadEventsFromFirestore();
+    _loadEventsFromFirestore(); // Firestore에서 영화 데이터를 불러옴
   }
 
+  // Firestore에서 영화 이벤트 데이터를 불러오는 함수
   void _loadEventsFromFirestore() async {
     QuerySnapshot snapshot = await moviesCollection.get();
     setState(() {
@@ -39,82 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<String> _uploadPosterImage(File posterImage) async {
-    try {
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('posters/${DateTime.now().millisecondsSinceEpoch}.jpg');
-      UploadTask uploadTask = storageRef.putFile(posterImage);
-      TaskSnapshot snapshot = await uploadTask;
-      String downloadUrl = await snapshot.ref.getDownloadURL();
-      return downloadUrl;
-    } catch (e) {
-      throw Exception('Error uploading image: $e');
-    }
-  }
-
-  void _addEventToFirestore(
-      DateTime date,
-      String title,
-      String posterUrl,
-      String director,
-      String actors,
-      String releaseYear,
-      String duration,
-      String ageLimit,
-      List<String> genres
-      ) async {
-    await moviesCollection.add({
-      'date': date,
-      'title': title,
-      'posterUrl': posterUrl,
-      'director': director,
-      'actors': actors,
-      'releaseYear': releaseYear,
-      'duration': duration,
-      'ageLimit': ageLimit,
-      'genres': genres,
-    });
-
-    setState(() {
-      if (_events[date] == null) {
-        _events[date] = [];
-      }
-      _events[date]?.add(title);
-    });
-  }
-
-  void _submitMovieData(
-      DateTime date,
-      String title,
-      File? posterImage,
-      String director,
-      String actors,
-      String releaseYear,
-      String duration,
-      String ageLimit,
-      List<String> genres) async {
-    try {
-      String posterUrl = '';
-      if (posterImage != null) {
-        posterUrl = await _uploadPosterImage(posterImage);
-      }
-      _addEventToFirestore(
-        date,
-        title,
-        posterUrl,
-        director,
-        actors,
-        releaseYear,
-        duration,
-        ageLimit,
-        genres,
-      );
-    } catch (e) {
-      print('Error adding movie: $e');
-    }
-  }
-
+  // 특정 날짜의 이벤트를 반환하는 함수
   List<String> _getEventsForDay(DateTime day) {
     return _events[day] ?? [];
   }
@@ -123,281 +46,131 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Afterscene'),
+        title: Text('Afterscene'), // 앱 제목
+        automaticallyImplyLeading: false, // 뒤로 가기 화살표 없앰
       ),
-      // Stack을 사용하여 마이페이지 버튼과 메인 컨텐츠를 겹치게 배치
-      body: Stack(
+      body: Column(
         children: [
-          Column(
-            children: [
-              TableCalendar(
-                focusedDay: _focusedDay,
-                firstDay: DateTime.utc(2022, 1, 1),
-                lastDay: DateTime.utc(2030, 12, 31),
-                selectedDayPredicate: (day) {
-                  return isSameDay(_selectedDay, day);
-                },
-                onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    _selectedDay = selectedDay;
-                    _focusedDay = focusedDay;
-                  });
-                  if (_getEventsForDay(selectedDay).isNotEmpty) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MovieRoomScreen(movieTitle: _getEventsForDay(selectedDay).first),
-                      ),
-                    );
-                  }
-                },
-                eventLoader: _getEventsForDay,
-                calendarBuilders: CalendarBuilders(
-                  markerBuilder: (context, date, events) {
-                    if (events.isNotEmpty) {
-                      return Positioned(
-                        right: 1,
-                        bottom: 1,
-                        child: _buildEventsMarker(date, events),
-                      );
-                    }
-                    return SizedBox();
-                  },
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  height: 200,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _events.length,
-                    itemBuilder: (context, index) {
-                      DateTime key = _events.keys.elementAt(index);
-                      String movieTitle = _events[key]!.first;
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => MovieRoomScreen(movieTitle: movieTitle),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          width: 130,
-                          margin: EdgeInsets.symmetric(horizontal: 8),
-                          child: Column(
-                            children: [
-                              Expanded(
-                                child: Image.network(
-                                  'https://via.placeholder.com/100x150',
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                movieTitle,
-                                style: TextStyle(fontSize: 16),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
+          // 영화 이벤트가 있는 날짜를 달력에 표시
+          TableCalendar(
+            focusedDay: _focusedDay,
+            firstDay: DateTime.utc(2022, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            selectedDayPredicate: (day) {
+              return isSameDay(_selectedDay, day);
+            },
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
+              if (_getEventsForDay(selectedDay).isNotEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MovieRoomScreen(movieTitle: _getEventsForDay(selectedDay).first),
+                  ),
+                );
+              }
+            },
+            eventLoader: _getEventsForDay,
+            calendarBuilders: CalendarBuilders(
+              markerBuilder: (context, date, events) {
+                if (events.isNotEmpty) {
+                  return Positioned(
+                    right: 1,
+                    bottom: 1,
+                    child: _buildEventsMarker(date, events),
+                  );
+                }
+                return SizedBox();
+              },
+            ),
+          ),
+          // 영화 목록을 가로 스크롤로 표시
+          Expanded(
+            child: Container(
+              height: 200,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _events.length,
+                itemBuilder: (context, index) {
+                  DateTime key = _events.keys.elementAt(index);
+                  String movieTitle = _events[key]!.first;
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MovieRoomScreen(movieTitle: movieTitle),
                         ),
                       );
                     },
-                  ),
-                ),
+                    child: Container(
+                      width: 130,
+                      margin: EdgeInsets.symmetric(horizontal: 8),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: AspectRatio(
+                              aspectRatio: 1 / 1.3, // 1:1.3 비율로 설정
+                              child: Image.network(
+                                'https://via.placeholder.com/100x150',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            movieTitle,
+                            style: TextStyle(fontSize: 16),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
-            ],
+            ),
           ),
-          // 마이페이지 버튼을 Stack 내부에 추가
-          _buildMyPageButton(), // 마이페이지 버튼
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showAddEventDialog(context);
+      // 하단 네비게이션 바에서 영화 추가 버튼을 사용하도록 변경
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add),
+            label: 'Add Movie',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'My Page',
+          ),
+        ],
+        currentIndex: 0, // 현재 선택된 네비게이션 바 인덱스
+        onTap: (int index) {
+          switch (index) {
+            case 0:
+              Navigator.pushReplacementNamed(context, '/'); // 홈으로 이동
+              break;
+            case 1:
+              Navigator.pushReplacementNamed(context, '/addMovie'); // Add Movie 화면으로 이동
+              break;
+            case 2:
+              Navigator.pushReplacementNamed(context, '/myPage'); // MyPageScreen으로 이동
+              break;
+          }
         },
-        child: Icon(Icons.add),
       ),
     );
   }
 
-  // 마이페이지로 이동하는 버튼 UI 및 로직
-  Widget _buildMyPageButton() {
-    return Positioned(
-      bottom: 16, // 하단에서 16px 위로 위치
-      left: 16, // 좌측에서 16px 우측으로 위치
-      child: GestureDetector(
-        onTap: () {
-          // 마이페이지로 이동하는 로직
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MyPageScreen(), // MyPageScreen으로 이동
-            ),
-          );
-        },
-        child: Container(
-          width: 60, // 버튼의 너비
-          height: 60, // 버튼의 높이
-          decoration: BoxDecoration(
-            color: Colors.blue, // 버튼의 배경색
-            borderRadius: BorderRadius.circular(10), // 버튼의 모서리 둥글게
-          ),
-          child: Center(
-            child: Icon(
-              Icons.person, // 사람 아이콘 (마이페이지를 상징)
-              color: Colors.white, // 아이콘 색상
-              size: 30, // 아이콘 크기
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-
-
-  void _showAddEventDialog(BuildContext context) {
-    String movieTitle = '';
-    File? _posterImage;
-    String director = '';
-    String actors = '';
-    String releaseYear = '';
-    String duration = '';
-    String ageLimit = '';
-    List<String> selectedGenres = [];
-    DateTime selectedDate = DateTime.now();
-
-    final genres = ['액션', '범죄', 'SF', '코미디', '로맨스 코미디', '스릴러', '공포', '전쟁', '스포츠', '판타지', '음악', '뮤지컬', '멜로'];
-
-    Future<void> _pickImage() async {
-      final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        setState(() {
-          _posterImage = File(pickedFile.path);
-        });
-      }
-    }
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Add Movie Event'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  decoration: InputDecoration(labelText: 'Movie Title'),
-                  onChanged: (value) {
-                    movieTitle = value;
-                  },
-                ),
-                SizedBox(height: 8),
-                _posterImage == null
-                    ? Text('No image selected.')
-                    : Image.file(
-                  _posterImage!,
-                  height: 150,
-                ),
-                ElevatedButton(
-                  onPressed: _pickImage,
-                  child: Text('Upload Poster'),
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Director'),
-                  onChanged: (value) {
-                    director = value;
-                  },
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Actors (comma separated)'),
-                  onChanged: (value) {
-                    actors = value;
-                  },
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Release Year'),
-                  onChanged: (value) {
-                    releaseYear = value;
-                  },
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Duration (in minutes)'),
-                  onChanged: (value) {
-                    duration = value;
-                  },
-                ),
-                TextField(
-                  decoration: InputDecoration(labelText: 'Age Limit'),
-                  onChanged: (value) {
-                    ageLimit = value;
-                  },
-                ),
-                SizedBox(height: 8),
-                Text('Select Date (Movie Watched)'),
-                SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () async {
-                    DateTime? picked = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    if (picked != null && picked != selectedDate) {
-                      setState(() {
-                        selectedDate = picked;
-                      });
-                    }
-                  },
-                  child: Text('Choose Date'),
-                ),
-                SizedBox(height: 8),
-                Text('Genres', style: TextStyle(fontWeight: FontWeight.bold)),
-                Wrap(
-                  children: genres.map((genre) {
-                    return ChoiceChip(
-                      label: Text(genre),
-                      selected: selectedGenres.contains(genre),
-                      onSelected: (selected) {
-                        setState(() {
-                          selected
-                              ? selectedGenres.add(genre)
-                              : selectedGenres.remove(genre);
-                        });
-                      },
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    _submitMovieData(
-                        selectedDate,
-                        movieTitle,
-                        _posterImage,
-                        director,
-                        actors,
-                        releaseYear,
-                        duration,
-                        ageLimit,
-                        selectedGenres);
-                    Navigator.pop(context);
-                  },
-                  child: Text('Add'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
+  // 달력에 이벤트 마커 표시
   Widget _buildEventsMarker(DateTime date, List events) {
     return Container(
       decoration: BoxDecoration(
@@ -408,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
       height: 16.0,
       child: Center(
         child: Text(
-          '${events.length}',
+          '${events.length}', // 해당 날짜의 이벤트 수 표시
           style: TextStyle(color: Colors.white, fontSize: 12.0),
         ),
       ),

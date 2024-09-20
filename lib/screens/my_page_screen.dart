@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore 추가
 
 class MyPageScreen extends StatefulWidget {
   @override
@@ -8,12 +9,30 @@ class MyPageScreen extends StatefulWidget {
 
 class _MyPageScreenState extends State<MyPageScreen> {
   User? user = FirebaseAuth.instance.currentUser;
+  Map<String, dynamic>? userData; // Firestore에서 가져온 사용자 데이터를 저장
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  // Firestore에서 사용자 데이터 불러오기
+  void _loadUserData() async {
+    if (user != null) {
+      DocumentSnapshot doc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+      setState(() {
+        userData = doc.data() as Map<String, dynamic>?;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('My Page'),
+        automaticallyImplyLeading: false, // 뒤로 가기 버튼 비활성화
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -21,6 +40,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
           children: [
             Text('User Name: ${user?.displayName ?? 'No Name'}'),
             Text('Email: ${user?.email ?? 'No Email'}'),
+            if (userData != null) ...[
+              Text('Major: ${userData!['major'] ?? 'No Major'}'),
+              Text('Favorite Genres: ${userData!['genres']?.join(', ') ?? 'No Genres'}'),
+            ],
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
@@ -35,10 +58,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
                   context,
                   MaterialPageRoute(builder: (context) => EditProfileScreen()),
                 ).then((_) async {
-                  // 프로필 수정 후 사용자 정보를 다시 로드
                   await FirebaseAuth.instance.currentUser?.reload();
                   setState(() {
                     user = FirebaseAuth.instance.currentUser;
+                    _loadUserData();  // 사용자 정보 새로고침
                   });
                 });
               },
@@ -46,6 +69,37 @@ class _MyPageScreenState extends State<MyPageScreen> {
             ),
           ],
         ),
+      ),
+      // 하단 네비게이션 바 추가
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add),
+            label: 'Add Movie',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'My Page',
+          ),
+        ],
+        currentIndex: 2, // My Page 화면일 때 인덱스 2로 설정
+        onTap: (int index) {
+          switch (index) {
+            case 0:
+              Navigator.pushReplacementNamed(context, '/'); // 홈으로 이동
+              break;
+            case 1:
+              Navigator.pushReplacementNamed(context, '/addMovie'); // 영화 추가 화면으로 이동
+              break;
+            case 2:
+              Navigator.pushReplacementNamed(context, '/myPage'); // My Page로 이동
+              break;
+          }
+        },
       ),
     );
   }
@@ -77,6 +131,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Edit Profile'),
+        automaticallyImplyLeading: false, // 뒤로 가기 버튼 비활성화
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -90,20 +145,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ElevatedButton(
               onPressed: () async {
                 try {
-                  print('Attempting to update display name to: ${nameController.text}');
-
                   // 사용자 이름 업데이트
                   await user?.updateDisplayName(nameController.text);
-                  print('Display name update successful');
+
+                  // Firestore에서 displayName 필드 업데이트
+                  await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
+                    'displayName': nameController.text,
+                  });
 
                   // 사용자 정보 다시 불러오기
                   await user?.reload();
                   setState(() {
                     user = FirebaseAuth.instance.currentUser;
                   });
-
-                  print('User info reloaded');
-                  print('Final Display Name: ${user?.displayName}');
 
                   Navigator.pop(context);
                 } catch (e) {
@@ -114,6 +168,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ],
         ),
+      ),
+      // 하단 네비게이션 바 추가
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add),
+            label: 'Add Movie',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'My Page',
+          ),
+        ],
+        currentIndex: 2, // My Page 화면일 때 인덱스 2로 설정
+        onTap: (int index) {
+          switch (index) {
+            case 0:
+              Navigator.pushReplacementNamed(context, '/'); // 홈으로 이동
+              break;
+            case 1:
+              Navigator.pushReplacementNamed(context, '/addMovie'); // 영화 추가 화면으로 이동
+              break;
+            case 2:
+              Navigator.pushReplacementNamed(context, '/myPage'); // My Page로 이동
+              break;
+          }
+        },
       ),
     );
   }

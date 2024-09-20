@@ -6,6 +6,8 @@ import 'screens/home_screen.dart';  // 홈 화면 UI
 import 'screens/login_screen.dart';  // 로그인 화면 UI
 import 'screens/signup_screen.dart';  // 회원가입 화면 UI
 import 'screens/movie_room_screen.dart';  // 영화 방 UI
+import 'screens/add_movie_screen.dart';  // Add Movie 화면 UI 추가
+import 'screens/my_page_screen.dart';  // My Page 화면 UI 추가
 
 void main() async {
   // 비동기 작업을 수행하기 위해 main 함수를 async로 설정
@@ -37,6 +39,8 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),  // '/login' 경로로 이동 시 LoginScreen 호출
         '/register': (context) => SignUpScreen(),  // '/register' 경로로 이동 시 회원가입 화면 호출
         '/movie': (context) => MovieRoomScreen(movieTitle: ''),  // 영화 방 화면으로 이동 시 MovieRoomScreen 호출 (초기에는 빈 제목 전달)
+        '/addMovie': (context) => AddMovieScreen(),  // 영화 추가 화면 경로 추가
+        '/myPage': (context) => MyPageScreen(),  // 마이 페이지 화면 경로 추가
       },
     );
   }
