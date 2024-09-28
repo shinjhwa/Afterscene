@@ -17,6 +17,14 @@ class MovieRoomScreen extends StatefulWidget {
 class _MovieRoomScreenState extends State<MovieRoomScreen> {
   final TextEditingController _reviewController = TextEditingController(); // 리뷰 작성 텍스트 필드 컨트롤러
   double _rating = 3.0; // 별점 기본 값
+  bool _isLiked = false;
+  bool _hasSeenMovie = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserMovieStatus();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +45,8 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
       ),
     );
   }
+
+
 
   // Firestore에서 영화 정보와 포스터를 불러오는 함수
   Widget _buildMovieInfo() {
@@ -59,42 +69,143 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
           );
         }
 
-        var movieData = snapshot.data!.data() as Map<String, dynamic>; // Firestore에서 가져온 데이터를 맵으로 캐스팅
+        var movieData = snapshot.data!.data() as Map<String,
+            dynamic>; // Firestore에서 가져온 데이터를 맵으로 캐스팅
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 영화 포스터
-            Container(
-              height: 200,
-              child: Image.network(
-                movieData['posterUrl'] ?? 'https://via.placeholder.com/150x200', // 포스터 URL이 없을 경우 기본 이미지 표시
-                fit: BoxFit.cover,
-              ),
-            ),
-            SizedBox(height: 10),
-            // 영화 제목, 감독, 개봉 연도, 배우 정보 등 표시
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 포스터와 버튼을 가로로 배치
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.movieTitle, // 영화 제목
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  // 영화 포스터
+                  Container(
+                    height: 200,
+                    child: Image.network(
+                      movieData['posterUrl'] ??
+                          'https://via.placeholder.com/150x200',
+                      // 포스터 URL이 없을 경우 기본 이미지 표시
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                  SizedBox(height: 5),
-                  Text('Director: ${movieData['director'] ?? 'Unknown'}'), // 감독
-                  Text('Year: ${movieData['releaseYear'] ?? 'Unknown'}'), // 개봉 연도
-                  Text('Actors: ${movieData['actors'] ?? 'Unknown'}'), // 배우
+                  SizedBox(width: 16), // 포스터와 버튼들 사이의 간격
+                  Column(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          _isLiked ? Icons.favorite : Icons.favorite_border,
+                          color: _isLiked ? Colors.red : Colors.grey,
+                        ),
+                        onPressed: _toggleMovieLike,
+                      ),
+                      Text('Liked'),
+                      SizedBox(height: 16), // Liked와 I Saw This Movie 버튼 사이 간격
+                      IconButton(
+                        icon: Icon(
+                          _hasSeenMovie ? Icons.visibility : Icons
+                              .visibility_off,
+                          color: _hasSeenMovie ? Colors.blue : Colors.grey,
+                        ),
+                        onPressed: _toggleSawMovie,
+                      ),
+                      Text('I Saw This Movie'),
+                    ],
+                  ),
                 ],
               ),
-            ),
-          ],
+              SizedBox(height: 10), // 포스터와 영화 정보 사이 간격
+              // 영화 제목, 감독, 개봉 연도, 배우 정보 등 표시
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.movieTitle, // 영화 제목
+                      style: TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 5),
+                    Text('Director: ${movieData['director'] ?? 'Unknown'}'),
+                    // 감독
+                    Text('Year: ${movieData['releaseYear'] ?? 'Unknown'}'),
+                    // 개봉 연도
+                    Text('Actors: ${movieData['actors'] ?? 'Unknown'}'),
+                    // 배우
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
   }
+
+  void _loadUserMovieStatus() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if(currentUser == null)
+      return;
+
+    DocumentSnapshot userMovieDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('movies')
+        .doc(widget.movieTitle)
+        .get();
+
+    if (userMovieDoc.exists) {
+      setState(() {
+        _isLiked = userMovieDoc['liked'] ?? false;
+        _hasSeenMovie = userMovieDoc['sawMovie'] ?? false;
+      });
+    }
+  }
+
+  void _toggleMovieLike() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if(currentUser == null)
+      return;
+
+    setState(() {
+      _isLiked = !_isLiked; // 좋아요 상태를 토글
+    });
+
+    // Firestore에 사용자 상태 저장
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('movies')
+        .doc(widget.movieTitle)
+        .set({
+      'liked': _isLiked,
+    }, SetOptions(merge: true));
+  }
+
+  // I saw this movie 버튼 토글 함수
+  void _toggleSawMovie() async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
+
+    setState(() {
+      _hasSeenMovie = !_hasSeenMovie; // 본 영화 상태를 토글
+    });
+
+    // Firestore에 사용자 상태 저장
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('movies')
+        .doc(widget.movieTitle)
+        .set({
+      'sawMovie': _hasSeenMovie,
+    }, SetOptions(merge: true));
+  }
+
 
   // 별점 및 리뷰 작성 섹션
   Widget _buildRatingSection() {
