@@ -26,7 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } on FirebaseAuthException catch (e) {
       // Firebase 인증 실패 시 에러 처리
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Login failed: ${e.message}'),  // 실패 메시지 출력
+        content: Text('로그인 실패: ${e.message}'),  // 실패 메시지 출력
       ));
     } finally {
       setState(() {
@@ -41,51 +41,91 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisAlignment: MainAxisAlignment.center,  // 중앙에 배치
+          crossAxisAlignment: CrossAxisAlignment.stretch,  // 가로로 꽉 채움
           children: [
-            SizedBox(height: 30,),
+            // 상단 이미지 로고
+            Image.asset(
+              'assets/image.jpg',  // 이미지 경로
+              height: 100,  // 이미지 크기
+              fit: BoxFit.contain,  // 이미지 비율 유지
+            ),
+            SizedBox(height: 20),  // 이미지와 텍스트 사이 여백
+            // 앱 이름 텍스트
             const Text(
               'Afterscene',
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+                fontSize: 28,  // 텍스트 크기
+                fontWeight: FontWeight.bold,  // 굵은 텍스트
+                color: Colors.white,  // 텍스트 색상 흰색
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: 5),
-            // 이메일 입력 필드
+            SizedBox(height: 40),  // 앱 이름과 입력 필드 사이 여백
+            // 이메일 입력 필드 (밑줄 스타일 적용)
             TextField(
               controller: emailController,
-              decoration: InputDecoration(labelText: 'Email'),
+              decoration: InputDecoration(
+                labelText: '이메일',  // 라벨을 한글로 변경
+                labelStyle: TextStyle(color: Colors.white),  // 라벨 색상 흰색
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),  // 기본 밑줄 색상 흰색
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue),  // 포커스 시 밑줄 색상 파란색
+                ),
+              ),
+              style: TextStyle(color: Colors.white),  // 입력된 텍스트 색상 흰색
             ),
-            // 비밀번호 입력 필드
+            SizedBox(height: 20),  // 이메일과 비밀번호 입력 칸 사이 여백
+            // 비밀번호 입력 필드 (밑줄 스타일 적용)
             TextField(
               controller: passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
-              obscureText: true,  // 비밀번호 입력 시 텍스트가 숨겨짐
+              obscureText: true,  // 비밀번호 입력 시 텍스트 숨김 처리
+              decoration: InputDecoration(
+                labelText: '비밀번호',  // 라벨을 한글로 변경
+                labelStyle: TextStyle(color: Colors.white),  // 라벨 색상 흰색
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white),  // 기본 밑줄 색상 흰색
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue),  // 포커스 시 밑줄 색상 파란색
+                ),
+              ),
+              style: TextStyle(color: Colors.white),  // 입력된 텍스트 색상 흰색
             ),
-            // 로딩 상태일 때 로딩 인디케이터 표시
-            if (isLoading)
-              CircularProgressIndicator(),
-            SizedBox(height: 10),
+            SizedBox(height: 40),  // 입력 필드와 버튼 사이 여백
             // 로그인 버튼
             ElevatedButton(
               onPressed: isLoading ? null : _login,  // 로딩 중에는 버튼 비활성화
-              child: Text('Login'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,  // 버튼 배경색을 파란색으로 설정
+                padding: EdgeInsets.symmetric(vertical: 15),  // 버튼 패딩 설정
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),  // 둥근 모서리 설정
+                ),
+              ),
+              child: Text('로그인', style: TextStyle(color: Colors.white)),  // 한글로 로그인 버튼 텍스트
             ),
-            // 회원가입 화면으로 이동 버튼
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/register');
-              },
-              child: Text('Don\'t have an account? Sign Up'),
-            ),
-            // 예시 이미지 (앱 로고 등)
-            Image.asset(
-              'assets/image.jpg',
-              height: 100,
-              fit: BoxFit.contain,
+            SizedBox(height: 20),  // 로그인 버튼과 텍스트 사이 여백
+            // 하단에 회원가입 텍스트 버튼
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '계정이 없으신가요?',  // 설명 텍스트
+                  style: TextStyle(color: Colors.white),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/register');  // 회원가입 화면으로 이동
+                  },
+                  child: Text(
+                    '회원가입',  // 텍스트 버튼
+                    style: TextStyle(color: Colors.blue),  // 파란색 링크 텍스트
+                  ),
+                ),
+              ],
             ),
           ],
         ),

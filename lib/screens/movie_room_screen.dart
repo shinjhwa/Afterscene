@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication �
 import 'package:flutter/material.dart'; // Flutter 기본 UI 위젯
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase Firestore 패키지
 import 'package:flutter_rating_bar/flutter_rating_bar.dart'; // 별점 평점 라이브러리
+import '../main.dart';
 import 'reply_screen.dart'; // 답글 스크린 파일 import
 
 class MovieRoomScreen extends StatefulWidget {
@@ -182,9 +183,11 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ReplyScreen(
-                              reviewId: review.id,
-                              movieTitle: widget.movieTitle,
+                            builder: (context) => MainScreen(
+                              child: ReplyScreen(
+                                reviewId: review.id,
+                                movieTitle: widget.movieTitle,
+                              ),
                             ),
                           ),
                         );

@@ -18,7 +18,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController majorController = TextEditingController();
   final List<String> selectedGenres = [];
   File? _profileImage;
-  final List<String> genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance'];
+  final List<String> genres = ['액션', '범죄', 'SF', '코미디', '로맨스 코미디', '스릴러', '공포', '전쟁', '스포츠', '판타지', '음악', '뮤지컬', '멜로'];
   bool isLoading = false;
 
   Future<void> _pickImage() async {

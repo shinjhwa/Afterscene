@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:table_calendar/table_calendar.dart'; // isSameDay 함수가 포함된 패키지
+import '../main.dart';
 import 'movie_room_screen.dart';
-import 'my_page_screen.dart'; // 마이페이지로 이동하는 버튼을 위해 MyPageScreen 추가
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -53,6 +53,23 @@ class _HomeScreenState extends State<HomeScreen> {
     return _events[_getDateOnly(day)] ?? []; // 날짜만 기준으로 비교
   }
 
+  // 현재 날짜를 기준으로 과거와 미래 날짜로 구분하여 리스트를 반환하는 함수
+  List<Map<String, dynamic>> _getMoviesBeforeNow() {
+    DateTime now = _getDateOnly(DateTime.now());
+    return _events.entries
+        .where((entry) => entry.key.isBefore(now))
+        .expand((entry) => entry.value)
+        .toList();
+  }
+
+  List<Map<String, dynamic>> _getMoviesAfterNow() {
+    DateTime now = _getDateOnly(DateTime.now());
+    return _events.entries
+        .where((entry) => isSameDay(entry.key, now) || entry.key.isAfter(now))
+        .expand((entry) => entry.value)
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,11 +79,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          // 영화 이벤트가 있는 날짜를 달력에 표시
+          // 2주치 달력
           TableCalendar(
             focusedDay: _focusedDay,
             firstDay: DateTime.utc(2022, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
+            calendarFormat: CalendarFormat.twoWeeks, // 캘린더를 2주로 제한
             selectedDayPredicate: (day) {
               return isSameDay(_selectedDay, day); // 선택된 날짜를 확인
             },
@@ -80,7 +98,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MovieRoomScreen(movieTitle: _getEventsForDay(selectedDay).first['title']),
+                    builder: (context) => MainScreen(
+                      child: MovieRoomScreen(movieTitle: _getEventsForDay(selectedDay).first['title']),
+                    ),
                   ),
                 );
               }
@@ -99,93 +119,72 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-          // 영화 목록을 가로 스크롤로 표시
-          Expanded(
-            child: Container(
-              height: 200,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal, // 가로 스크롤
-                itemCount: _events.length, // 영화 이벤트의 개수
-                itemBuilder: (context, index) {
-                  DateTime key = _events.keys.elementAt(index); // 각 날짜에 해당하는 key (날짜)
-                  String movieTitle = _events[key]!.first['title']; // 해당 날짜의 첫 번째 영화 제목
-                  String posterUrl = _events[key]!.first['posterUrl']; // 해당 날짜의 첫 번째 영화 포스터 URL
-
-                  return GestureDetector(
-                    onTap: () {
-                      // 영화 클릭 시 MovieRoomScreen으로 이동
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MovieRoomScreen(movieTitle: movieTitle),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: 130,
-                      margin: EdgeInsets.symmetric(horizontal: 8),
-                      child: Column(
-                        children: [
-                          // 영화 포스터 표시 (등록된 포스터 URL을 사용)
-                          Expanded(
-                            child: AspectRatio(
-                              aspectRatio: 1 / 1.3, // 가로 세로 비율을 1:1.3으로 설정
-                              child: Image.network(
-                                posterUrl, // 등록된 포스터 URL 사용
-                                fit: BoxFit.cover, // 이미지 비율을 맞춤
-                                errorBuilder: (context, error, stackTrace) {
-                                  // 이미지 로딩에 실패할 경우 기본 이미지 표시
-                                  return Image.network('https://via.placeholder.com/100x150', fit: BoxFit.cover);
-                                },
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          // 영화 제목 표시
-                          Text(
-                            movieTitle,
-                            style: TextStyle(fontSize: 16),
-                            overflow: TextOverflow.ellipsis, // 영화 제목이 길면 생략 표시
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+          // 본 영화 목록
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text('본 영화', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ),
+          _buildMovieList(_getMoviesBeforeNow()),
+          // 볼 영화 목록
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text('볼 영화', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ),
+          _buildMovieList(_getMoviesAfterNow()),
         ],
       ),
-      // 하단 네비게이션 바에서 영화 추가 버튼을 사용하도록 변경
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home), // 홈 아이콘
-            label: 'Home', // 라벨
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add), // 영화 추가 아이콘
-            label: 'Add Movie', // 라벨
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person), // 마이페이지 아이콘
-            label: 'My Page', // 라벨
-          ),
-        ],
-        currentIndex: 0, // 현재 선택된 네비게이션 바 인덱스
-        onTap: (int index) {
-          switch (index) {
-            case 0:
-              Navigator.pushReplacementNamed(context, '/'); // 홈으로 이동
-              break;
-            case 1:
-              Navigator.pushReplacementNamed(context, '/addMovie'); // Add Movie 화면으로 이동
-              break;
-            case 2:
-              Navigator.pushReplacementNamed(context, '/myPage'); // MyPageScreen으로 이동
-              break;
-          }
+    );
+  }
+
+  // 영화 리스트를 빌드하는 함수
+  Widget _buildMovieList(List<Map<String, dynamic>> movies) {
+    return Expanded(
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: movies.length,
+        itemBuilder: (context, index) {
+          var movie = movies[index];
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MainScreen(
+                    child: MovieRoomScreen(movieTitle: movie['title']),
+                  ),
+                ),
+              );
+            },
+            child: Container(
+              width: 130,
+              margin: EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                children: [
+                  // 영화 포스터 표시 (등록된 포스터 URL을 사용)
+                  Expanded(
+                    child: AspectRatio(
+                      aspectRatio: 1 / 1.3, // 가로 세로 비율을 1:1.3으로 설정
+                      child: Image.network(
+                        movie['posterUrl'], // 등록된 포스터 URL 사용
+                        fit: BoxFit.cover, // 이미지 비율을 맞춤
+                        errorBuilder: (context, error, stackTrace) {
+                          // 이미지 로딩에 실패할 경우 기본 이미지 표시
+                          return Image.network('https://via.placeholder.com/100x150', fit: BoxFit.cover);
+                        },
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  // 영화 제목 표시
+                  Text(
+                    movie['title'],
+                    style: TextStyle(fontSize: 16),
+                    overflow: TextOverflow.ellipsis, // 영화 제목이 길면 생략 표시
+                  ),
+                ],
+              ),
+            ),
+          );
         },
       ),
     );

@@ -169,37 +169,6 @@ class _AddMovieScreenState extends State<AddMovieScreen> {
           ],
         ),
       ),
-      // 하단 네비게이션 바
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Add Movie',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'My Page',
-          ),
-        ],
-        currentIndex: 1, // 현재 Add Movie 페이지 인덱스
-        onTap: (int index) {
-          switch (index) {
-            case 0:
-              Navigator.pushReplacementNamed(context, '/'); // 홈 화면으로 이동
-              break;
-            case 1:
-            // 현재 Add Movie 페이지이므로 아무 동작도 하지 않음
-              break;
-            case 2:
-              Navigator.pushReplacementNamed(context, '/myPage'); // 마이 페이지로 이동
-              break;
-          }
-        },
-      ),
     );
   }
 }
