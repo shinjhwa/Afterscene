@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication �
 import 'package:flutter/material.dart'; // Flutter 기본 UI 위젯
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase Firestore 패키지
 import 'package:flutter_rating_bar/flutter_rating_bar.dart'; // 별점 평점 라이브러리
+import 'reply_screen.dart'; // 답글 스크린 파일 import
 
 class MovieRoomScreen extends StatefulWidget {
   final String movieTitle;
@@ -33,7 +34,6 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildChatRoomButton(), // 채팅방 이동 버튼
     );
   }
 
@@ -153,7 +153,7 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
               var review = reviews[index]; // 각 리뷰 데이터
               var currentUser = FirebaseAuth.instance.currentUser;
 
-              bool likedByUser = review['likedUsers']?.contains(currentUser?.uid) ?? false;
+              bool likedByUser = review['likedUsers']?.contains(currentUser?.uid) ?? false; // likedUsers 필드가 없으면 빈 리스트 처리
 
               return ListTile(
                 title: Text(review['reviewText']), // 리뷰 내용
@@ -175,26 +175,27 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
                       onPressed: () => _toggleLike(review.id, likedByUser),
                     ),
                     SizedBox(width: 8),
-                    Text('${review['likeCount'] ?? 0}'), // 따봉 개수 표시
+                    Text('${review['likeCount'] ?? 0}'), // 따봉 개수 표시, 필드 없으면 0
+                    IconButton(
+                      icon: Icon(Icons.comment),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ReplyScreen(
+                              reviewId: review.id,
+                              movieTitle: widget.movieTitle,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               );
             },
           );
         },
-      ),
-    );
-  }
-
-  // 채팅방 이동 버튼
-  Widget _buildChatRoomButton() {
-    return Container(
-      padding: EdgeInsets.all(16.0),
-      child: ElevatedButton(
-        onPressed: () {
-          // 채팅방 이동 코드 (추후 구현)
-        },
-        child: Text('Go to Chat Room'),
       ),
     );
   }
@@ -218,7 +219,7 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
       'userName': userName, // 작성자 이름
       'timestamp': FieldValue.serverTimestamp(), // 서버 시간으로 타임스탬프 추가
       'likeCount': 0, // 따봉 초기 개수
-      'likedUsers': [], // 따봉을 누른 사용자 목록
+      'likedUsers': [], // 따봉을 누른 사용자 목록 초기화
     });
 
     _reviewController.clear(); // 리뷰 필드 초기화
@@ -244,8 +245,8 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
 
       if (!reviewSnapshot.exists) return;
 
-      var likedUsers = List<String>.from(reviewSnapshot['likedUsers'] ?? []);
-      int likeCount = reviewSnapshot['likeCount'] ?? 0;
+      var likedUsers = List<String>.from(reviewSnapshot['likedUsers'] ?? []); // likedUsers 필드가 없을 때 빈 리스트
+      int likeCount = reviewSnapshot['likeCount'] ?? 0; // likeCount가 없을 경우 0으로 초기화
 
       if (likedByUser) {
         // 이미 사용자가 따봉을 누른 경우 -> 취소
@@ -258,8 +259,8 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
       }
 
       transaction.update(reviewRef, {
-        'likedUsers': likedUsers,
-        'likeCount': likeCount,
+        'likedUsers': likedUsers, // 따봉 누른 사용자 목록 업데이트
+        'likeCount': likeCount, // 따봉 개수 업데이트
       });
     });
   }

@@ -22,12 +22,17 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadEventsFromFirestore(); // Firestore에서 영화 데이터를 불러옴
   }
 
+  // 날짜에서 시간 정보를 제거하고 날짜 정보만 반환하는 함수
+  DateTime _getDateOnly(DateTime dateTime) {
+    return DateTime(dateTime.year, dateTime.month, dateTime.day); // 연, 월, 일만 남기고 시간 정보는 제거
+  }
+
   // Firestore에서 영화 데이터를 불러오는 함수
   void _loadEventsFromFirestore() async {
     QuerySnapshot snapshot = await moviesCollection.get(); // Firestore에서 영화 데이터를 가져옴
     setState(() {
       for (var doc in snapshot.docs) {
-        DateTime movieDate = (doc['date'] as Timestamp).toDate(); // Firestore의 타임스탬프를 DateTime으로 변환
+        DateTime movieDate = _getDateOnly((doc['date'] as Timestamp).toDate()); // 시간 정보는 제거하고 날짜만 사용
         String movieTitle = doc['title']; // 영화 제목
         String posterUrl = doc['posterUrl'] ?? 'https://via.placeholder.com/100x150'; // 포스터 URL, 없으면 기본 이미지로 설정
 
@@ -45,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // 특정 날짜의 이벤트를 반환하는 함수
   List<Map<String, dynamic>> _getEventsForDay(DateTime day) {
-    return _events[day] ?? [];
+    return _events[_getDateOnly(day)] ?? []; // 날짜만 기준으로 비교
   }
 
   @override
@@ -191,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle, // 동그란 모양의 마커
-        color: Colors.blue, // 마커 색상
+        color: Colors.red, // 마커 색상 (빨간색)
       ),
       width: 16.0,
       height: 16.0,
