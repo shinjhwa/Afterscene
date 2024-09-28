@@ -1,9 +1,13 @@
 import 'dart:io';
+import 'package:afterscene/screens/saw_movies_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+
+import 'liked_movie_screen.dart';
+import 'movie_room_screen.dart';
 
 class MyPageScreen extends StatefulWidget {
   @override
@@ -77,6 +81,27 @@ class _MyPageScreenState extends State<MyPageScreen> {
                 );
               }).toList(),
             ),
+
+            ListTile(
+              leading: Icon(Icons.favorite),
+              title: Text('I Liked This Movie'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LikedMoviesScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.visibility),
+              title: Text('I Saw This Movie'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SawMoviesScreen()),
+                );
+              },
+            )
           ],
         ),
       ),

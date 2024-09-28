@@ -100,7 +100,9 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
                           _isLiked ? Icons.favorite : Icons.favorite_border,
                           color: _isLiked ? Colors.red : Colors.grey,
                         ),
-                        onPressed: _toggleMovieLike,
+                        onPressed: () {
+                          _toggleMovieLike(widget.movieTitle);
+                        },
                       ),
                       Text('Liked'),
                       SizedBox(height: 16), // Liked와 I Saw This Movie 버튼 사이 간격
@@ -110,27 +112,30 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
                               .visibility_off,
                           color: _hasSeenMovie ? Colors.blue : Colors.grey,
                         ),
-                        onPressed: _toggleSawMovie,
-                      ),
-                      Text('I Saw This Movie'),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(height: 10), // 포스터와 영화 정보 사이 간격
-              // 영화 제목, 감독, 개봉 연도, 배우 정보 등 표시
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.movieTitle, // 영화 제목
-                      style: TextStyle(
+                        onPressed: () {
+                          _toggleSawMovie(widget.movieTitle);
+                        },
+                          ),
+                          Text('I Saw This Movie'),
+                          ],
+                          ),
+                          ],
+                          ),
+                          SizedBox(height: 10), // 포스터와 영화 정보 사이 간격
+                          // 영화 제목, 감독, 개봉 연도, 배우 정보 등 표시
+                          Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                          Text(
+                          widget.movieTitle, // 영화 제목
+                          style: TextStyle(
                           fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 5),
-                    Text('Director: ${movieData['director'] ?? 'Unknown'}'),
+                          ),
+                          SizedBox(height: 5),
+                          Text('Director: ${movieData['director'] ?? 'Unknown'}'
+                          ),
                     // 감독
                     Text('Year: ${movieData['releaseYear'] ?? 'Unknown'}'),
                     // 개봉 연도
@@ -166,44 +171,47 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
     }
   }
 
-  void _toggleMovieLike() async {
-    User? currentUser = FirebaseAuth.instance.currentUser;
-    if(currentUser == null)
-      return;
-
-    setState(() {
-      _isLiked = !_isLiked; // 좋아요 상태를 토글
-    });
-
-    // Firestore에 사용자 상태 저장
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUser.uid)
-        .collection('movies')
-        .doc(widget.movieTitle)
-        .set({
-      'liked': _isLiked,
-    }, SetOptions(merge: true));
-  }
-
-  // I saw this movie 버튼 토글 함수
-  void _toggleSawMovie() async {
+  void _toggleMovieLike(String movieId) async {
     User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return;
 
-    setState(() {
-      _hasSeenMovie = !_hasSeenMovie; // 본 영화 상태를 토글
-    });
-
-    // Firestore에 사용자 상태 저장
-    await FirebaseFirestore.instance
+    DocumentReference userDoc = FirebaseFirestore.instance
         .collection('users')
         .doc(currentUser.uid)
-        .collection('movies')
-        .doc(widget.movieTitle)
-        .set({
-      'sawMovie': _hasSeenMovie,
-    }, SetOptions(merge: true));
+        .collection('likedMovies')
+        .doc(movieId);
+
+    DocumentSnapshot movieSnapshot = await userDoc.get();
+
+    if (movieSnapshot.exists) {
+      // 이미 좋아요를 누른 영화 -> 좋아요 취소
+      await userDoc.delete();
+    } else {
+      // 좋아요 누름
+      await userDoc.set({'movieId': movieId});
+    }
+  }
+
+  // I saw this movie 버튼 토글 함수
+  void _toggleSawMovie(String movieId) async {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
+
+    DocumentReference userDoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('sawMovies')
+        .doc(movieId);
+
+    DocumentSnapshot movieSnapshot = await userDoc.get();
+
+    if (movieSnapshot.exists) {
+      // 이미 봤음 -> 봤어요 취소
+      await userDoc.delete();
+    } else {
+      // 봤어요 누름
+      await userDoc.set({'movieId': movieId});
+    }
   }
 
 
