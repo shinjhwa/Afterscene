@@ -98,9 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MainScreen(
-                      child: MovieRoomScreen(movieTitle: _getEventsForDay(selectedDay).first['title']),
-                    ),
+                    builder: (context) => MovieRoomScreen(movieTitle: _getEventsForDay(selectedDay).first['title']),
                   ),
                 );
               }
@@ -149,10 +147,8 @@ class _HomeScreenState extends State<HomeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => MainScreen(
-                    child: MovieRoomScreen(movieTitle: movie['title']),
+                  builder: (context) => MovieRoomScreen(movieTitle: movie['title']),
                   ),
-                ),
               );
             },
             child: Container(
