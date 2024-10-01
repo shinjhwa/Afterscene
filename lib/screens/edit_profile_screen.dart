@@ -12,7 +12,7 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController nameController = TextEditingController(); // 이름 입력 컨트롤러
-  List<String> genres = ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi', 'Romance']; // 영화 장르 목록
+  List<String> genres = ['액션', '범죄', 'SF', '코미디', '로맨스 코미디', '스릴러', '공포', '전쟁', '스포츠', '판타지', '음악', '뮤지컬', '멜로']; // 영화 장르 목록
   List<String> selectedGenres = []; // 선택된 장르
   File? _profileImage; // 프로필 이미지 파일
   String? currentProfileImageUrl; // 현재 프로필 이미지 URL
