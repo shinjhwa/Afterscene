@@ -75,9 +75,8 @@ class _SawMoviesScreenState extends State<SawMoviesScreen> {
                                   .collection('sawMovies')
                                   .doc(movie['movieId'])
                                   .delete();
-
                               setState(() {
-                                hasSeen = false; // 상태 변경
+                                hasSeen = false;
                               });
                             } else {
                               // 본 영화 추가
@@ -87,9 +86,8 @@ class _SawMoviesScreenState extends State<SawMoviesScreen> {
                                   .collection('sawMovies')
                                   .doc(movie['movieId'])
                                   .set({'movieId': movie['movieId']});
-
                               setState(() {
-                                hasSeen = true; // 상태 변경
+                                hasSeen = true;
                               });
                             }
                           },

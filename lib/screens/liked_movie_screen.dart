@@ -59,7 +59,7 @@ class _LikedMoviesScreenState extends State<LikedMoviesScreen> {
                       builder: (context, AsyncSnapshot<DocumentSnapshot> likeSnapshot) {
                         if (!likeSnapshot.hasData) return CircularProgressIndicator();
 
-                        bool isLiked = likeSnapshot.data!.exists; // 좋아요 상태 확인
+                        bool isLiked = likeSnapshot.data!.exists;
 
                         return IconButton(
                           icon: Icon(
@@ -75,8 +75,6 @@ class _LikedMoviesScreenState extends State<LikedMoviesScreen> {
                                   .collection('likedMovies')
                                   .doc(movie['movieId'])
                                   .delete();
-
-                              // 상태 변경
                               setState(() {
                                 isLiked = false;
                               });
@@ -88,8 +86,6 @@ class _LikedMoviesScreenState extends State<LikedMoviesScreen> {
                                   .collection('likedMovies')
                                   .doc(movie['movieId'])
                                   .set({'movieId': movie['movieId']});
-
-                              // 상태 변경
                               setState(() {
                                 isLiked = true;
                               });
