@@ -2,9 +2,12 @@ import 'package:firebase_auth/firebase_auth.dart'; // Firebase Authentication �
 import 'package:flutter/material.dart'; // Flutter 기본 UI 위젯
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase Firestore 패키지
 import 'package:flutter_rating_bar/flutter_rating_bar.dart'; // 별점 평점 라이브러리
+import 'reply_screen.dart'; // reply_screen.dart 파일 import
+import 'my_page_screen.dart'; // MyPageScreen import
 
+// 영화 방 화면, 사용자는 영화를 보고 리뷰를 작성하고 다른 사람들의 리뷰를 볼 수 있음
 class MovieRoomScreen extends StatefulWidget {
-  final String movieTitle;
+  final String movieTitle; // 영화 제목을 받아옴
 
   MovieRoomScreen({required this.movieTitle});
 
@@ -21,10 +24,9 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserMovieStatus(); // 사용자 영화 상태를 로드
+    _loadUserMovieStatus(); // 사용자 영화 상태를 로드 (좋아요 여부, 본 영화 여부)
   }
 
-  // UI 빌드를 담당하는 메서드
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -137,12 +139,11 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
     );
   }
 
-  // 사용자의 영화 상태를 Firestore에서 로드하는 함수
+  // 사용자 영화 상태 로드 함수 (좋아요 여부, 본 영화 여부)
   void _loadUserMovieStatus() async {
     User? currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return;
 
-    // 좋아요 상태 확인
     DocumentSnapshot likedMovieDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(currentUser.uid)
@@ -150,7 +151,6 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
         .doc(widget.movieTitle)
         .get();
 
-    // 본 영화 상태 확인
     DocumentSnapshot sawMovieDoc = await FirebaseFirestore.instance
         .collection('users')
         .doc(currentUser.uid)
@@ -178,13 +178,11 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
     DocumentSnapshot movieSnapshot = await userDoc.get();
 
     if (movieSnapshot.exists) {
-      // 이미 좋아요를 누른 경우 -> 좋아요 취소
       await userDoc.delete();
       setState(() {
         _isLiked = false;
       });
     } else {
-      // 좋아요 누르기
       await userDoc.set({'movieId': movieId});
       setState(() {
         _isLiked = true;
@@ -206,13 +204,11 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
     DocumentSnapshot movieSnapshot = await userDoc.get();
 
     if (movieSnapshot.exists) {
-      // 이미 본 영화일 경우 -> 상태 취소
       await userDoc.delete();
       setState(() {
         _hasSeenMovie = false;
       });
     } else {
-      // 본 영화로 설정
       await userDoc.set({'movieId': movieId});
       setState(() {
         _hasSeenMovie = true;
@@ -238,7 +234,7 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
             ),
             onRatingUpdate: (rating) {
               setState(() {
-                _rating = rating; // 별점 업데이트
+                _rating = rating;
               });
             },
           ),
@@ -248,7 +244,7 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
           ),
           SizedBox(height: 8),
           ElevatedButton(
-            onPressed: _submitReview, // 리뷰 제출
+            onPressed: _submitReview,
             child: Text('Submit Review'),
           ),
         ],
@@ -259,7 +255,7 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
   // Firestore에서 리뷰 목록을 실시간으로 불러오는 함수
   Widget _buildReviews() {
     return Container(
-      height: 300, // 리뷰 목록 고정 높이 설정
+      height: 300,
       child: StreamBuilder(
         stream: FirebaseFirestore.instance
             .collection('movies')
@@ -271,21 +267,35 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
           if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
 
           var reviews = snapshot.data!.docs;
+          var currentUser = FirebaseAuth.instance.currentUser;
+
           return ListView.builder(
             itemCount: reviews.length,
             itemBuilder: (context, index) {
               var review = reviews[index];
-              var currentUser = FirebaseAuth.instance.currentUser;
-
               bool likedByUser = review['likedUsers']?.contains(currentUser?.uid) ?? false;
 
               return ListTile(
-                title: Text(review['reviewText']), // 리뷰 내용
+                title: Text(review['reviewText']),
                 subtitle: Row(
                   children: [
-                    Text('Rating: ${review['rating']}'), // 별점
+                    Text('Rating: ${review['rating']}'),
                     Spacer(),
-                    Text(review['userName']), // 작성자 이름
+                    GestureDetector(
+                      child: Text(review['userName'], style: TextStyle(color: Colors.blue)),
+                      onTap: () {
+                        // 유저 프로필 페이지로 이동
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MyPageScreen(
+                              userId: review['userId'], // 유저 ID 전달
+                              isEditable: currentUser?.uid == review['userId'], // 자신일 때만 수정 가능
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
                 trailing: Row(
@@ -296,10 +306,24 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
                         likedByUser ? Icons.thumb_up : Icons.thumb_up_outlined,
                         color: likedByUser ? Colors.blue : null,
                       ),
-                      onPressed: () => _toggleLike(review.id, likedByUser), // 좋아요 토글
+                      onPressed: () => _toggleLike(review.id, likedByUser),
                     ),
                     SizedBox(width: 8),
-                    Text('${review['likeCount'] ?? 0}'), // 좋아요 개수 표시
+                    Text('${review['likeCount'] ?? 0}'),
+                    IconButton(
+                      icon: Icon(Icons.comment),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ReplyScreen(
+                              reviewId: review.id,
+                              movieTitle: widget.movieTitle,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
               );
@@ -317,27 +341,37 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
     User? currentUser = FirebaseAuth.instance.currentUser;
     String userName = currentUser?.displayName ?? 'User123';
 
-    // Firestore에 리뷰 데이터 추가
-    await FirebaseFirestore.instance
-        .collection('movies')
-        .doc(widget.movieTitle)
-        .collection('reviews')
-        .add({
+    final reviewData = {
       'reviewText': _reviewController.text,
       'rating': _rating,
       'userName': userName,
+      'userId': currentUser!.uid,
       'timestamp': FieldValue.serverTimestamp(),
       'likeCount': 0,
       'likedUsers': [],
-    });
+    };
+
+    // Firestore에 리뷰 데이터 추가
+    var movieRef = FirebaseFirestore.instance.collection('movies').doc(widget.movieTitle);
+
+    // movies/{movieId}/reviews/{reviewId}에 저장
+    var newReviewRef = await movieRef.collection('reviews').add(reviewData);
+
+    // users/{userId}/reviews/{reviewId}에 동일한 리뷰 저장
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('reviews')
+        .doc(newReviewRef.id)
+        .set({...reviewData, 'movieId': widget.movieTitle}); // 사용자 컬렉션에도 저장
 
     _reviewController.clear();
     setState(() {
-      _rating = 3.0; // 별점 초기화
+      _rating = 3.0;
     });
   }
 
-  // 리뷰에 대한 좋아요 토글 기능
+  // 리뷰 좋아요 토글 기능
   void _toggleLike(String reviewId, bool likedByUser) async {
     var currentUser = FirebaseAuth.instance.currentUser;
 
@@ -358,10 +392,10 @@ class _MovieRoomScreenState extends State<MovieRoomScreen> {
       int likeCount = reviewSnapshot['likeCount'] ?? 0;
 
       if (likedByUser) {
-        likedUsers.remove(currentUser.uid);
+        likedUsers.remove(currentUser!.uid);
         likeCount--;
       } else {
-        likedUsers.add(currentUser.uid);
+        likedUsers.add(currentUser!.uid);
         likeCount++;
       }
 

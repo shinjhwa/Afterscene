@@ -8,6 +8,7 @@ import 'screens/movie_room_screen.dart';  // 영화 방 UI
 import 'screens/add_movie_screen.dart';  // Add Movie 화면 UI 추가
 import 'screens/my_page_screen.dart';  // My Page 화면 UI 추가
 import 'screens/reply_screen.dart';  // Reply 화면 UI 추가
+import 'package:firebase_auth/firebase_auth.dart';  // Firebase Auth 관련 패키지 추가
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,8 +36,10 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/register': (context) => SignUpScreen(),
         '/addMovie': (context) => AddMovieScreen(),
-        '/myPage': (context) => MyPageScreen(),
-        // 영화 방 및 답글 화면도 네비게이션 바가 있는 MainScreen으로 이동
+        '/myPage': (context) => MyPageScreen(
+          userId: FirebaseAuth.instance.currentUser?.uid ?? '', // 현재 로그인된 사용자 ID 전달
+          isEditable: true, // 자신의 페이지이므로 수정 가능하게 설정
+        ),
       },
     );
   }
@@ -54,11 +57,17 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
+  // 로그인한 사용자의 userId
+  String? userId = FirebaseAuth.instance.currentUser?.uid;
+
   // 화면 선택에 따른 위젯 리스트
   static List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
     AddMovieScreen(),
-    MyPageScreen(),
+    MyPageScreen(
+      userId: FirebaseAuth.instance.currentUser?.uid ?? '', // 로그인된 사용자 ID 전달
+      isEditable: true, // 본인 페이지이므로 수정 가능
+    ),
   ];
 
   @override
