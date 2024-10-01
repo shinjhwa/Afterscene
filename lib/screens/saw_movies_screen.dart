@@ -102,6 +102,7 @@ class _SawMoviesScreenState extends State<SawMoviesScreen> {
                         MaterialPageRoute(
                           builder: (context) => MovieRoomScreen(movieTitle: movieData['title']),
                         ),
+
                       );
                     },
                   );
